@@ -8,12 +8,18 @@
 #include "commands/cmd_storage.h"
 #include "commands/cmd_ble.h"
 #include "commands/cmd_config.h"
+#include "commands/cmd_tools.h"
 
 #include "multitask.h"
 #include "power_manager.h"
 #include "storage_manager.h"
 #include "ble_manager.h"
 #include "config_manager.h"
+#include <stdarg.h>
+
+static const int MAX_LINES = 32;
+static String consoleLines[MAX_LINES];
+static int lineCount = 0;
 
 void console_init() {
     MultitaskManager::getInstance().init();
@@ -22,51 +28,95 @@ void console_init() {
     ConfigManager::getInstance().init();
 }
 
+void console_println(const String& line) {
+    Serial.println(line);
+    if (lineCount < MAX_LINES) {
+        consoleLines[lineCount++] = line;
+    } else {
+        for (int i = 1; i < MAX_LINES; ++i) {
+            consoleLines[i - 1] = consoleLines[i];
+        }
+        consoleLines[MAX_LINES - 1] = line;
+    }
+}
+
+void console_printf(const char* format, ...) {
+    char loc_buf[128];
+    va_list arg;
+    va_start(arg, format);
+    vsnprintf(loc_buf, sizeof(loc_buf), format, arg);
+    va_end(arg);
+    console_println(String(loc_buf));
+}
+
 void console_process_line(const String& line) {
 
     // -------------------------
     // HELP
     // -------------------------
     if (line == "help") {
-        Serial.println("\n=== Available Commands ===");
+        console_println("\n=== Available Commands ===");
 
-        Serial.println("System:");
-        Serial.println("  sysinfo                - System information");
-        Serial.println("  help                   - Show this help");
+        console_println("System:");
+        console_println("  sysinfo                - System information");
+        console_println("  help                   - Show this help");
 
-        Serial.println("\nWiFi:");
-        Serial.println("  wifi scan              - Scan for networks");
+        console_println("\nWiFi:");
+        console_println("  wifi scan              - Scan for networks");
 
-        Serial.println("\nHID (Human Interface):");
-        Serial.println("  hid test               - Test keyboard/buttons");
-        Serial.println("  hid info               - Keyboard information");
-        Serial.println("  hid mouse              - Mouse emulation info");
-        Serial.println("  hid gamepad            - Gamepad test");
+        console_println("\nHID (Human Interface):");
+        console_println("  hid test               - Test keyboard/buttons");
+        console_println("  hid info               - Keyboard information");
+        console_println("  hid mouse              - Mouse emulation info");
+        console_println("  hid gamepad            - Gamepad test");
 
-        Serial.println("\nMultitasking:");
-        Serial.println("  task list              - List active tasks");
+        console_println("\nMultitasking:");
+        console_println("  task list              - List active tasks");
 
-        Serial.println("\nPower Management:");
-        Serial.println("  power info             - Power information");
-        Serial.println("  power battery          - Battery status");
-        Serial.println("  power mode             - Power modes");
-        Serial.println("  power sleep            - Enter sleep mode");
+        console_println("\nPower Management:");
+        console_println("  power info             - Power information");
+        console_println("  power battery          - Battery status");
+        console_println("  power mode             - Power modes");
+        console_println("  power sleep            - Enter sleep mode");
 
-        Serial.println("\nStorage:");
-        Serial.println("  storage info           - Storage information");
-        Serial.println("  storage ls             - List SD card contents");
+        console_println("\nStorage:");
+        console_println("  storage info           - Storage information");
+        console_println("  storage ls             - List SD card contents");
 
-        Serial.println("\nBluetooth:");
-        Serial.println("  ble start              - Start BLE advertising");
-        Serial.println("  ble stop               - Stop BLE advertising");
-        Serial.println("  ble info               - BLE information");
+        console_println("\nBluetooth:");
+        console_println("  ble start              - Start BLE advertising");
+        console_println("  ble stop               - Stop BLE advertising");
+        console_println("  ble info               - BLE information");
 
-        Serial.println("\nConfiguration:");
-        Serial.println("  config show            - Show configuration");
-        Serial.println("  config save            - Save configuration");
-        Serial.println("  config reset           - Reset to defaults");
+        console_println("\nConfiguration:");
+        console_println("  config show            - Show configuration");
+        console_println("  config save            - Save configuration");
+        console_println("  config reset           - Reset to defaults");
 
-        Serial.println("===========================\n");
+        console_println("\nAdvanced Tools:");
+        console_println("  scan bssid             - Detailed WiFi scan");
+        console_println("  parse <file>           - Parse log file");
+        console_println("  crack <target>         - Simulation/Test tool");
+
+        console_println("===========================\n");
+        return;
+    }
+
+    // -------------------------
+    // TOOLS
+    // -------------------------
+    if (line == "scan bssid") {
+        cmd_wifi_scan_details();
+        return;
+    }
+
+    if (line.startsWith("parse ")) {
+        cmd_tools_parse(line.substring(6));
+        return;
+    }
+
+    if (line.startsWith("crack ")) {
+        cmd_tools_crack(line.substring(6));
         return;
     }
 
@@ -192,5 +242,9 @@ void console_process_line(const String& line) {
     // -------------------------
     // UNKNOWN
     // -------------------------
-    Serial.println("Unknown command. Type 'help' for available commands.");
+    console_println("Unknown command. Type 'help' for available commands.");
 }
+
+// These are needed by main.cpp for redraw
+int console_get_line_count() { return lineCount; }
+String console_get_line(int index) { if (index >= 0 && index < lineCount) return consoleLines[index]; return ""; }

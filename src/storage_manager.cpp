@@ -1,4 +1,5 @@
 #include "storage_manager.h"
+#include "console.h"
 
 StorageManager& StorageManager::getInstance() {
     static StorageManager instance;
@@ -16,10 +17,12 @@ void StorageManager::init() {
     if (now - lastInitAttempt < initRetryInterval) return;
     lastInitAttempt = now;
 
-    Serial.println("Initializing SD card...");
+    console_println("Initializing SD card...");
 
-    if (!SD.begin()) {
-        Serial.println("SD Card initialization failed");
+    // M5Cardputer SD Pins: CS=12, SCK=41, MISO=40, MOSI=14
+    SPI.begin(41, 40, 14, 12);
+    if (!SD.begin(12, SPI, 25000000)) {
+        console_println("SD Card initialization failed");
         sdMounted = false;
         return;
     }
@@ -110,32 +113,28 @@ bool StorageManager::deleteDir(const char* path) {
 
 void StorageManager::listDir(const char* path, uint8_t levels) {
     if (!sdMounted) {
-        Serial.println("SD Card not mounted");
+        console_println("SD Card not mounted");
         return;
     }
 
     File root = SD.open(path);
     if (!root || !root.isDirectory()) {
-        Serial.printf("Failed to open directory: %s\n", path);
+        console_printf("Failed to open directory: %s", path);
         return;
     }
 
     File file = root.openNextFile();
     while (file) {
-        for (uint8_t i = 0; i < levels; i++) Serial.print("  ");
+        String indent = "";
+        for (uint8_t i = 0; i < levels; i++) indent += "  ";
 
         if (file.isDirectory()) {
-            Serial.print("DIR: ");
-            Serial.println(file.name());
+            console_printf("%sDIR: %s", indent.c_str(), file.name());
             if (levels > 0) {
                 listDir(file.path(), levels - 1);
             }
         } else {
-            Serial.print("FILE: ");
-            Serial.print(file.name());
-            Serial.print(" (");
-            Serial.print(file.size());
-            Serial.println(" bytes)");
+            console_printf("%sFILE: %s (%llu bytes)", indent.c_str(), file.name(), file.size());
         }
 
         file = root.openNextFile();
@@ -144,14 +143,14 @@ void StorageManager::listDir(const char* path, uint8_t levels) {
 
 void StorageManager::printStorageInfo() {
     if (!sdMounted) {
-        Serial.println("SD Card not mounted");
+        console_println("SD Card not mounted");
         return;
     }
 
     uint64_t cardSize = SD.cardSize();
     uint64_t usedSize = SD.usedBytes();
 
-    Serial.printf("SD Card Size: %llu MB\n", cardSize / (1024 * 1024));
-    Serial.printf("Used Space: %llu MB\n", usedSize / (1024 * 1024));
-    Serial.printf("Free Space: %llu MB\n", (cardSize - usedSize) / (1024 * 1024));
+    console_printf("SD Card Size: %llu MB", cardSize / (1024 * 1024));
+    console_printf("Used Space: %llu MB", usedSize / (1024 * 1024));
+    console_printf("Free Space: %llu MB", (cardSize - usedSize) / (1024 * 1024));
 }

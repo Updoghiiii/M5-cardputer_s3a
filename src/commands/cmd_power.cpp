@@ -1,5 +1,6 @@
 #include "cmd_power.h"
 #include "../power_manager.h"
+#include "../console.h"
 #include <Arduino.h>
 
 void cmd_power_info() {
@@ -7,21 +8,21 @@ void cmd_power_info() {
 }
 
 void cmd_power_battery() {
-    Serial.println("=== Battery Information ===");
+    console_println("=== Battery Information ===");
     PowerManager& pm = PowerManager::getInstance();
-    Serial.printf("Voltage: %.2f V\n", pm.getBatteryVoltage());
-    Serial.printf("Percentage: %.1f %%\n", pm.getBatteryPercentage());
-    Serial.println("============================");
+    console_printf("Voltage: %.2f V", pm.getBatteryVoltage());
+    console_printf("Percentage: %.1f %%", pm.getBatteryPercentage());
+    console_println("============================");
 }
 
 void cmd_power_mode() {
-    Serial.println("=== Power Modes ===");
-    Serial.println("normal      - Full performance");
-    Serial.println("efficiency  - Reduced power consumption");
-    Serial.println("lowpower    - Minimal power consumption");
-    Serial.println("sleep       - Enter sleep mode");
-    Serial.printf("Current: %s\n", PowerManager::getInstance().getPowerModeString());
-    Serial.println("===================");
+    console_println("=== Power Modes ===");
+    console_println("normal      - Full performance");
+    console_println("efficiency  - Reduced power consumption");
+    console_println("lowpower    - Minimal power consumption");
+    console_println("sleep       - Enter sleep mode");
+    console_printf("Current: %s", PowerManager::getInstance().getPowerModeString());
+    console_println("===================");
 }
 
 void cmd_power_mode_set(const String& mode) {
@@ -29,38 +30,38 @@ void cmd_power_mode_set(const String& mode) {
 
     if (mode == "normal") {
         pm.setPowerMode(POWER_MODE_NORMAL);
-        Serial.println("Power mode set to NORMAL");
+        console_println("Power mode set to NORMAL");
         return;
     }
 
     if (mode == "efficiency") {
         pm.setPowerMode(POWER_MODE_EFFICIENCY);
-        Serial.println("Power mode set to EFFICIENCY");
+        console_println("Power mode set to EFFICIENCY");
         return;
     }
 
     if (mode == "lowpower") {
         pm.setPowerMode(POWER_MODE_LOW_POWER);
-        Serial.println("Power mode set to LOW POWER");
+        console_println("Power mode set to LOW POWER");
         return;
     }
 
     if (mode == "sleep") {
-        Serial.println("Initiating sleep mode...");
+        console_println("Initiating sleep mode...");
         pm.setPowerMode(POWER_MODE_SLEEP);
-        Serial.println("Device entering sleep. Press any key to wake.");
+        console_println("Device entering sleep. Press any key to wake.");
         return;
     }
 
-    Serial.println("Unknown mode. Valid modes:");
-    Serial.println("  normal");
-    Serial.println("  efficiency");
-    Serial.println("  lowpower");
-    Serial.println("  sleep");
+    console_println("Unknown mode. Valid modes:");
+    console_println("  normal");
+    console_println("  efficiency");
+    console_println("  lowpower");
+    console_println("  sleep");
 }
 
 void cmd_power_sleep() {
-    Serial.println("Initiating sleep mode...");
+    console_println("Initiating sleep mode...");
     PowerManager::getInstance().setPowerMode(POWER_MODE_SLEEP);
-    Serial.println("Device entering sleep. Press any key to wake.");
+    console_println("Device entering sleep. Press any key to wake.");
 }

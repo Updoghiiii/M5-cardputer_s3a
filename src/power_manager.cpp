@@ -89,8 +89,9 @@ const char* PowerManager::getPowerModeString() {
     }
 }
 
+#include "console.h"
 void PowerManager::printBatteryInfo() {
-    Serial.printf("Battery: %.2fV (%.1f%%) - Mode: %s\n",
+    console_printf("Battery: %.2fV (%.1f%%) - Mode: %s",
                   batteryVoltage, batteryPercentage, getPowerModeString());
 }
 
