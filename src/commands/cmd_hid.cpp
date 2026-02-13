@@ -28,7 +28,7 @@ void cmd_hid_test() {
 
         if (!M5Cardputer.Keyboard.isChange()) continue;
 
-        d.fillRect(0, 40, 240, 200, BLACK);
+        d.fillRect(0, 40, d.width(), d.height() - 40, BLACK);
         d.setCursor(0, 40);
 
         d.println("Chars:");

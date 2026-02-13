@@ -29,7 +29,7 @@ void console_redraw() {
     d.setCursor(0, 0);
     d.setTextWrap(false);
 
-    const int VISIBLE_LINES = 16;
+    const int VISIBLE_LINES = 15;
     int start = 0;
 
     if (lineCount > VISIBLE_LINES - 1) {
@@ -49,6 +49,7 @@ void setup() {
     delay(500);
 
     auto cfg = M5.config();
+    cfg.board = m5::board_t::board_M5Cardputer;
     cfg.output_power = true;
     cfg.internal_imu = false;
     cfg.internal_rtc = false;
@@ -67,58 +68,47 @@ void setup() {
 
 void loop() {
     M5Cardputer.update();
-    M5Cardputer.Keyboard.update();
-
     PowerManager::getInstance().update();
 
-    auto& state = M5Cardputer.Keyboard.keysState();
-    uint8_t key_count = M5Cardputer.Keyboard.isPressed();
+    if (M5Cardputer.Keyboard.isChange()) {
+        if (M5Cardputer.Keyboard.isPressed()) {
+            PowerManager::getInstance().resetIdleTimer();
 
-    bool changed = false;
+            auto& state = M5Cardputer.Keyboard.keysState();
+            bool changed = false;
 
-    // Only reset idle timer when actual keys are pressed
-    if (key_count > 0 && key_count <= 10) {
-        PowerManager::getInstance().resetIdleTimer();
-    }
-
-    // Ignore garbage
-    if (key_count == 0 || key_count > 10) {
-        delay(50);
-        return;
-    }
-
-    // Process typed characters
-    if (state.word.size() > 0 && state.word.size() <= 10) {
-        for (char c : state.word) {
-            if ((c >= 32 && c <= 126)) {  // printable ASCII
-                buffer += c;
+            // ENTER
+            if (state.enter) {
+                console_add_line("> " + buffer);
+                console_process_line(buffer);
+                buffer = "";
                 changed = true;
-                Serial.printf("Char: '%c'\n", c);
+                Serial.println("[ENTER]");
+            }
+            // BACKSPACE
+            else if (state.del) {
+                if (buffer.length() > 0) {
+                    buffer.remove(buffer.length() - 1);
+                    changed = true;
+                    Serial.println("[BACKSPACE]");
+                }
+            }
+            // Process typed characters
+            else if (state.word.size() > 0) {
+                for (char c : state.word) {
+                    if (c >= 32 && c <= 126) {  // printable ASCII
+                        buffer += c;
+                        changed = true;
+                        Serial.printf("Char: '%c'\n", c);
+                    }
+                }
+            }
+
+            if (changed) {
+                console_redraw();
             }
         }
     }
 
-    // ENTER
-    if (state.enter && key_count <= 5) {
-        console_add_line("> " + buffer);
-        console_process_line(buffer);
-        buffer = "";
-        changed = true;
-        Serial.println("[ENTER]");
-    }
-
-    // BACKSPACE
-    if (state.del && key_count <= 5) {
-        if (buffer.length() > 0) {
-            buffer.remove(buffer.length() - 1);
-            changed = true;
-            Serial.println("[BACKSPACE]");
-        }
-    }
-
-    if (changed) {
-        console_redraw();
-    }
-
-    delay(50);
+    delay(10);
 }

@@ -11,7 +11,7 @@ DisplayManager::DisplayManager()
 }
 
 void DisplayManager::init() {
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
     d.fillScreen(DEFAULT_BG_COLOR);
     d.setTextColor(DEFAULT_TEXT_COLOR, DEFAULT_BG_COLOR);
     d.setTextSize(1);
@@ -52,7 +52,7 @@ void DisplayManager::closeWindow(int windowId) {
 void DisplayManager::writeToWindow(int windowId, const String& text) {
     if (windowId < 0 || windowId >= (int)windows.size()) return;
 
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
     Window_t &window = windows[windowId];
 
     int textX = window.x + 5;
@@ -67,14 +67,14 @@ void DisplayManager::writeToWindow(int windowId, const String& text) {
 void DisplayManager::clearWindow(int windowId) {
     if (windowId < 0 || windowId >= (int)windows.size()) return;
 
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
     Window_t &window = windows[windowId];
 
     d.fillRect(window.x, window.y, window.width, window.height, window.bgColor);
 }
 
 void DisplayManager::drawAllWindows() {
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
 
     for (size_t i = 0; i < windows.size(); i++) {
         if (!windows[i].visible) continue;
@@ -99,18 +99,18 @@ void DisplayManager::setWindowVisible(int windowId, bool visible) {
 }
 
 void DisplayManager::drawStatusBar(const String& status) {
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
 
     statusBar = status;
 
-    d.fillRect(0, 228, 240, 12, BLACK);
+    d.fillRect(0, d.height() - 12, d.width(), 12, BLACK);
     d.setTextColor(WHITE, BLACK);
-    d.setCursor(5, 230);
+    d.setCursor(5, d.height() - 10);
     d.setTextSize(1);
     d.println(status);
 }
 
 void DisplayManager::drawBorder(int x, int y, int width, int height, uint16_t color) {
-    auto &d = M5C.Display;
+    auto &d = M5Cardputer.Display;
     d.drawRect(x, y, width, height, color);
 }
