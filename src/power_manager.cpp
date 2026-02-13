@@ -1,18 +1,18 @@
 #include "power_manager.h"
+#include <M5Cardputer.h>
 #include <esp_adc_cal.h>
 #include <driver/adc.h>
 
-#define BATTERY_ADC_PIN 34
-#define BATTERY_CHECK_INTERVAL 5000  // 5 seconds
-#define DEFAULT_SLEEP_TIMEOUT 60000  // 60 seconds
+#define BATTERY_CHECK_INTERVAL 5000      // 5 seconds
+#define DEFAULT_SLEEP_TIMEOUT 60000      // 60 seconds
 
 PowerManager& PowerManager::getInstance() {
     static PowerManager instance;
     return instance;
 }
 
-PowerManager::PowerManager() 
-    : currentMode(POWER_MODE_NORMAL), 
+PowerManager::PowerManager()
+    : currentMode(POWER_MODE_NORMAL),
       batteryVoltage(0.0f),
       batteryPercentage(100.0f),
       lastBatteryCheck(0),
@@ -22,18 +22,15 @@ PowerManager::PowerManager()
 }
 
 void PowerManager::init() {
-    // Initialize ADC for battery monitoring
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
-    
     Serial.println("Power Manager initialized");
 }
 
 void PowerManager::update() {
-    if (batteryMonitoringEnabled) {
-        updateBatteryStatus();
-        checkSleepCondition();
-    }
+    if (!batteryMonitoringEnabled) return;
+    updateBatteryStatus();
+    checkSleepCondition();
 }
 
 float PowerManager::getBatteryVoltage() {
@@ -45,8 +42,29 @@ float PowerManager::getBatteryPercentage() {
 }
 
 void PowerManager::setPowerMode(PowerMode_t mode) {
+    if (currentMode == mode) return;
+
     currentMode = mode;
     Serial.printf("Power mode changed to: %s\n", getPowerModeString());
+
+    switch (mode) {
+        case POWER_MODE_NORMAL:
+            M5C.Display.setTextColor(WHITE, BLACK);
+            break;
+
+        case POWER_MODE_EFFICIENCY:
+            // hook for dimming / reduced refresh
+            break;
+
+        case POWER_MODE_LOW_POWER:
+            // hook for aggressive dimming / shutdown
+            break;
+
+        case POWER_MODE_SLEEP:
+            Serial.println("Entering sleep mode...");
+            enterSleep();
+            break;
+    }
 }
 
 PowerMode_t PowerManager::getPowerMode() {
@@ -67,39 +85,29 @@ void PowerManager::resetIdleTimer() {
 
 const char* PowerManager::getPowerModeString() {
     switch (currentMode) {
-        case POWER_MODE_NORMAL:
-            return "Normal";
-        case POWER_MODE_EFFICIENCY:
-            return "Efficiency";
-        case POWER_MODE_LOW_POWER:
-            return "Low Power";
-        case POWER_MODE_SLEEP:
-            return "Sleep";
-        default:
-            return "Unknown";
+        case POWER_MODE_NORMAL:      return "Normal";
+        case POWER_MODE_EFFICIENCY:  return "Efficiency";
+        case POWER_MODE_LOW_POWER:   return "Low Power";
+        case POWER_MODE_SLEEP:       return "Sleep";
+        default:                     return "Unknown";
     }
 }
 
 void PowerManager::printBatteryInfo() {
-    Serial.printf("Battery: %.2fV (%.1f%%) - Mode: %s\n", 
+    Serial.printf("Battery: %.2fV (%.1f%%) - Mode: %s\n",
                   batteryVoltage, batteryPercentage, getPowerModeString());
 }
 
 void PowerManager::updateBatteryStatus() {
     uint32_t now = millis();
-    if (now - lastBatteryCheck < BATTERY_CHECK_INTERVAL) {
-        return;
-    }
-    
+    if (now - lastBatteryCheck < BATTERY_CHECK_INTERVAL) return;
+
     lastBatteryCheck = now;
-    
-    // Read ADC value
-    uint32_t adcValue = adc1_get_raw(ADC1_CHANNEL_6);
-    
-    // Convert to voltage (M5 Stack specific: multiply by 2 for voltage divider)
-    batteryVoltage = (adcValue / 4095.0f) * 3.3f * 2.0f;
-    
-    // Estimate battery percentage (3.0V = 0%, 4.2V = 100%)
+
+    uint32_t raw = adc1_get_raw(ADC1_CHANNEL_6);
+
+    batteryVoltage = (raw / 4095.0f) * 3.3f * 2.0f;
+
     if (batteryVoltage <= 3.0f) {
         batteryPercentage = 0.0f;
     } else if (batteryVoltage >= 4.2f) {
@@ -107,16 +115,37 @@ void PowerManager::updateBatteryStatus() {
     } else {
         batteryPercentage = ((batteryVoltage - 3.0f) / 1.2f) * 100.0f;
     }
-    
-    // Auto switch to low power mode at 20%
-    if (batteryPercentage < 20.0f && currentMode != POWER_MODE_LOW_POWER) {
+
+    if (batteryPercentage < 20.0f &&
+        currentMode != POWER_MODE_LOW_POWER &&
+        currentMode != POWER_MODE_SLEEP) {
         setPowerMode(POWER_MODE_LOW_POWER);
     }
 }
 
 void PowerManager::checkSleepCondition() {
     uint32_t idleTime = millis() - lastActivityTime;
-    if (idleTime > sleepTimeout && currentMode != POWER_MODE_SLEEP) {
+
+    if (M5C.Keyboard.isPressed() > 0) {
+        resetIdleTimer();
+        return;
+    }
+
+    if (idleTime > sleepTimeout &&
+        currentMode != POWER_MODE_SLEEP) {
         setPowerMode(POWER_MODE_SLEEP);
     }
+}
+
+void PowerManager::enterSleep() {
+    Serial.println("System sleeping...");
+
+    M5C.Display.fillScreen(BLACK);
+
+    esp_sleep_enable_timer_wakeup(5 * 1000000ULL);
+    esp_light_sleep_start();
+
+    Serial.println("Woke from sleep");
+    resetIdleTimer();
+    setPowerMode(POWER_MODE_NORMAL);
 }

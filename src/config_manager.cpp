@@ -27,34 +27,35 @@ void ConfigManager::loadDefaults() {
 
 void ConfigManager::loadConfig() {
     StorageManager& storage = StorageManager::getInstance();
-    
+
     if (!storage.isSDCardMounted()) {
         Serial.println("SD Card not mounted, using default config");
         loadDefaults();
         return;
     }
-    
+
     if (!storage.fileExists(CONFIG_FILE)) {
         Serial.println("Config file not found, creating with defaults");
         saveConfig();
         return;
     }
-    
+
     String jsonString = storage.readFile(CONFIG_FILE);
     if (jsonString.length() == 0) {
+        Serial.println("Config file empty, loading defaults");
         loadDefaults();
         return;
     }
-    
+
     StaticJsonDocument<CONFIG_BUFFER_SIZE> doc;
     DeserializationError error = deserializeJson(doc, jsonString);
-    
+
     if (error) {
         Serial.printf("Failed to parse config: %s\n", error.c_str());
         loadDefaults();
         return;
     }
-    
+
     config.deviceName = doc["deviceName"] | "M5 CardPuter";
     config.wifiSSID = doc["wifiSSID"] | "";
     config.wifiPassword = doc["wifiPassword"] | "";
@@ -62,19 +63,20 @@ void ConfigManager::loadConfig() {
     config.displayBrightness = doc["displayBrightness"] | 200;
     config.sleepTimeout = doc["sleepTimeout"] | 60000;
     config.batteryMonitoringEnabled = doc["batteryMonitoringEnabled"] | true;
-    
+
     Serial.println("Config loaded successfully");
 }
 
 void ConfigManager::saveConfig() {
     StorageManager& storage = StorageManager::getInstance();
-    
+
     if (!storage.isSDCardMounted()) {
         Serial.println("SD Card not mounted, cannot save config");
         return;
     }
-    
+
     StaticJsonDocument<CONFIG_BUFFER_SIZE> doc;
+
     doc["deviceName"] = config.deviceName;
     doc["wifiSSID"] = config.wifiSSID;
     doc["wifiPassword"] = config.wifiPassword;
@@ -82,10 +84,10 @@ void ConfigManager::saveConfig() {
     doc["displayBrightness"] = config.displayBrightness;
     doc["sleepTimeout"] = config.sleepTimeout;
     doc["batteryMonitoringEnabled"] = config.batteryMonitoringEnabled;
-    
+
     String jsonString;
     serializeJson(doc, jsonString);
-    
+
     if (storage.writeFile(CONFIG_FILE, jsonString)) {
         Serial.println("Config saved successfully");
     } else {

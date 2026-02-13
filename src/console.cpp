@@ -1,4 +1,5 @@
 #include "console.h"
+
 #include "commands/cmd_sys.h"
 #include "commands/cmd_wifi.h"
 #include "commands/cmd_hid.h"
@@ -7,6 +8,7 @@
 #include "commands/cmd_storage.h"
 #include "commands/cmd_ble.h"
 #include "commands/cmd_config.h"
+
 #include "multitask.h"
 #include "power_manager.h"
 #include "storage_manager.h"
@@ -21,50 +23,72 @@ void console_init() {
 }
 
 void console_process_line(const String& line) {
+
+    // -------------------------
+    // HELP
+    // -------------------------
     if (line == "help") {
         Serial.println("\n=== Available Commands ===");
+
         Serial.println("System:");
         Serial.println("  sysinfo                - System information");
         Serial.println("  help                   - Show this help");
+
         Serial.println("\nWiFi:");
         Serial.println("  wifi scan              - Scan for networks");
+
         Serial.println("\nHID (Human Interface):");
         Serial.println("  hid test               - Test keyboard/buttons");
         Serial.println("  hid info               - Keyboard information");
         Serial.println("  hid mouse              - Mouse emulation info");
         Serial.println("  hid gamepad            - Gamepad test");
+
         Serial.println("\nMultitasking:");
         Serial.println("  task list              - List active tasks");
+
         Serial.println("\nPower Management:");
         Serial.println("  power info             - Power information");
         Serial.println("  power battery          - Battery status");
         Serial.println("  power mode             - Power modes");
         Serial.println("  power sleep            - Enter sleep mode");
+
         Serial.println("\nStorage:");
         Serial.println("  storage info           - Storage information");
         Serial.println("  storage ls             - List SD card contents");
+
         Serial.println("\nBluetooth:");
         Serial.println("  ble start              - Start BLE advertising");
         Serial.println("  ble stop               - Stop BLE advertising");
         Serial.println("  ble info               - BLE information");
+
         Serial.println("\nConfiguration:");
         Serial.println("  config show            - Show configuration");
         Serial.println("  config save            - Save configuration");
         Serial.println("  config reset           - Reset to defaults");
+
         Serial.println("===========================\n");
         return;
     }
 
+    // -------------------------
+    // SYSTEM
+    // -------------------------
     if (line == "sysinfo") {
         cmd_sysinfo();
         return;
     }
 
+    // -------------------------
+    // WIFI
+    // -------------------------
     if (line == "wifi scan") {
         cmd_wifi_scan();
         return;
     }
 
+    // -------------------------
+    // HID
+    // -------------------------
     if (line == "hid test") {
         cmd_hid_test();
         return;
@@ -85,11 +109,17 @@ void console_process_line(const String& line) {
         return;
     }
 
+    // -------------------------
+    // MULTITASK
+    // -------------------------
     if (line == "task list") {
         cmd_task_list();
         return;
     }
 
+    // -------------------------
+    // POWER
+    // -------------------------
     if (line == "power info") {
         cmd_power_info();
         return;
@@ -110,6 +140,9 @@ void console_process_line(const String& line) {
         return;
     }
 
+    // -------------------------
+    // STORAGE
+    // -------------------------
     if (line == "storage info") {
         cmd_storage_info();
         return;
@@ -120,6 +153,9 @@ void console_process_line(const String& line) {
         return;
     }
 
+    // -------------------------
+    // BLE
+    // -------------------------
     if (line == "ble start") {
         cmd_ble_start();
         return;
@@ -135,6 +171,9 @@ void console_process_line(const String& line) {
         return;
     }
 
+    // -------------------------
+    // CONFIG
+    // -------------------------
     if (line == "config show") {
         cmd_config_show();
         return;
@@ -150,5 +189,8 @@ void console_process_line(const String& line) {
         return;
     }
 
+    // -------------------------
+    // UNKNOWN
+    // -------------------------
     Serial.println("Unknown command. Type 'help' for available commands.");
 }

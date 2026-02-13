@@ -5,19 +5,28 @@ StorageManager& StorageManager::getInstance() {
     return instance;
 }
 
-StorageManager::StorageManager() : sdMounted(false) {
+StorageManager::StorageManager()
+    : sdMounted(false),
+      lastInitAttempt(0),
+      initRetryInterval(2000) {
 }
 
 void StorageManager::init() {
-    // Try to initialize SD card
+    uint32_t now = millis();
+    if (now - lastInitAttempt < initRetryInterval) return;
+    lastInitAttempt = now;
+
+    Serial.println("Initializing SD card...");
+
     if (!SD.begin()) {
         Serial.println("SD Card initialization failed");
         sdMounted = false;
-    } else {
-        Serial.println("SD Card mounted successfully");
-        sdMounted = true;
-        printStorageInfo();
+        return;
     }
+
+    sdMounted = true;
+    Serial.println("SD Card mounted successfully");
+    printStorageInfo();
 }
 
 bool StorageManager::isSDCardMounted() {
@@ -31,13 +40,12 @@ bool StorageManager::fileExists(const char* path) {
 
 bool StorageManager::createFile(const char* path) {
     if (!sdMounted) return false;
-    
+
     File file = SD.open(path, FILE_WRITE);
-    if (file) {
-        file.close();
-        return true;
-    }
-    return false;
+    if (!file) return false;
+
+    file.close();
+    return true;
 }
 
 bool StorageManager::deleteFile(const char* path) {
@@ -47,34 +55,46 @@ bool StorageManager::deleteFile(const char* path) {
 
 bool StorageManager::writeFile(const char* path, const String& data) {
     if (!sdMounted) return false;
-    
-    File file = SD.open(path, FILE_WRITE);
+
+    String tempPath = String(path) + ".tmp";
+
+    File file = SD.open(tempPath.c_str(), FILE_WRITE);
     if (!file) {
-        Serial.printf("Failed to open file: %s\n", path);
+        Serial.printf("Failed to open file for write: %s\n", tempPath.c_str());
         return false;
     }
-    
+
     size_t written = file.print(data);
     file.close();
-    
-    return written > 0;
+
+    if (written == 0) {
+        SD.remove(tempPath.c_str());
+        return false;
+    }
+
+    SD.remove(path);
+    SD.rename(tempPath.c_str(), path);
+
+    return true;
 }
 
 String StorageManager::readFile(const char* path) {
     if (!sdMounted) return "";
-    
+
     File file = SD.open(path, FILE_READ);
     if (!file) {
         Serial.printf("Failed to open file: %s\n", path);
         return "";
     }
-    
-    String content = "";
+
+    String content;
+    content.reserve(file.size());
+
     while (file.available()) {
         content += (char)file.read();
     }
+
     file.close();
-    
     return content;
 }
 
@@ -93,19 +113,17 @@ void StorageManager::listDir(const char* path, uint8_t levels) {
         Serial.println("SD Card not mounted");
         return;
     }
-    
+
     File root = SD.open(path);
     if (!root || !root.isDirectory()) {
-        Serial.println("Failed to open directory");
+        Serial.printf("Failed to open directory: %s\n", path);
         return;
     }
-    
+
     File file = root.openNextFile();
     while (file) {
-        for (uint8_t i = 0; i < levels; i++) {
-            Serial.print("  ");
-        }
-        
+        for (uint8_t i = 0; i < levels; i++) Serial.print("  ");
+
         if (file.isDirectory()) {
             Serial.print("DIR: ");
             Serial.println(file.name());
@@ -119,7 +137,7 @@ void StorageManager::listDir(const char* path, uint8_t levels) {
             Serial.print(file.size());
             Serial.println(" bytes)");
         }
-        
+
         file = root.openNextFile();
     }
 }
@@ -129,10 +147,10 @@ void StorageManager::printStorageInfo() {
         Serial.println("SD Card not mounted");
         return;
     }
-    
+
     uint64_t cardSize = SD.cardSize();
     uint64_t usedSize = SD.usedBytes();
-    
+
     Serial.printf("SD Card Size: %llu MB\n", cardSize / (1024 * 1024));
     Serial.printf("Used Space: %llu MB\n", usedSize / (1024 * 1024));
     Serial.printf("Free Space: %llu MB\n", (cardSize - usedSize) / (1024 * 1024));
