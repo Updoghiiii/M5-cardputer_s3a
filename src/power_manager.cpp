@@ -1,7 +1,5 @@
 #include "power_manager.h"
 #include <M5Cardputer.h>
-#include <esp_adc_cal.h>
-#include <driver/adc.h>
 
 #define BATTERY_CHECK_INTERVAL 5000      // 5 seconds
 #define DEFAULT_SLEEP_TIMEOUT 60000      // 60 seconds
@@ -22,8 +20,6 @@ PowerManager::PowerManager()
 }
 
 void PowerManager::init() {
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
     Serial.println("Power Manager initialized");
 }
 
@@ -49,7 +45,7 @@ void PowerManager::setPowerMode(PowerMode_t mode) {
 
     switch (mode) {
         case POWER_MODE_NORMAL:
-            M5C.Display.setTextColor(WHITE, BLACK);
+            M5Cardputer.Display.setTextColor(WHITE, BLACK);
             break;
 
         case POWER_MODE_EFFICIENCY:
@@ -104,17 +100,8 @@ void PowerManager::updateBatteryStatus() {
 
     lastBatteryCheck = now;
 
-    uint32_t raw = adc1_get_raw(ADC1_CHANNEL_6);
-
-    batteryVoltage = (raw / 4095.0f) * 3.3f * 2.0f;
-
-    if (batteryVoltage <= 3.0f) {
-        batteryPercentage = 0.0f;
-    } else if (batteryVoltage >= 4.2f) {
-        batteryPercentage = 100.0f;
-    } else {
-        batteryPercentage = ((batteryVoltage - 3.0f) / 1.2f) * 100.0f;
-    }
+    batteryVoltage = M5Cardputer.Power.getBatteryVoltage() / 1000.0f;
+    batteryPercentage = M5Cardputer.Power.getBatteryLevel();
 
     if (batteryPercentage < 20.0f &&
         currentMode != POWER_MODE_LOW_POWER &&
@@ -126,7 +113,7 @@ void PowerManager::updateBatteryStatus() {
 void PowerManager::checkSleepCondition() {
     uint32_t idleTime = millis() - lastActivityTime;
 
-    if (M5C.Keyboard.isPressed() > 0) {
+    if (M5Cardputer.Keyboard.isPressed() > 0) {
         resetIdleTimer();
         return;
     }
@@ -140,7 +127,7 @@ void PowerManager::checkSleepCondition() {
 void PowerManager::enterSleep() {
     Serial.println("System sleeping...");
 
-    M5C.Display.fillScreen(BLACK);
+    M5Cardputer.Display.fillScreen(BLACK);
 
     esp_sleep_enable_timer_wakeup(5 * 1000000ULL);
     esp_light_sleep_start();
