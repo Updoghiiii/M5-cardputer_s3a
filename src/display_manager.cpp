@@ -10,12 +10,13 @@ DisplayManager::DisplayManager()
     : nextWindowId(0) {
 }
 
+#include "console.h"
 void DisplayManager::init() {
     auto &d = M5Cardputer.Display;
     d.fillScreen(DEFAULT_BG_COLOR);
     d.setTextColor(DEFAULT_TEXT_COLOR, DEFAULT_BG_COLOR);
     d.setTextSize(1);
-    Serial.println("Display Manager initialized");
+    console_println("Display Manager initialized");
 }
 
 void DisplayManager::update() {
@@ -24,7 +25,7 @@ void DisplayManager::update() {
 
 int DisplayManager::createWindow(int x, int y, int width, int height, const char* title) {
     if (windows.size() >= MAX_WINDOWS) {
-        Serial.println("Max windows reached");
+        console_println("Max windows reached");
         return -1;
     }
 

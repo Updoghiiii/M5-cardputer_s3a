@@ -1,4 +1,5 @@
 #include "ble_manager.h"
+#include "console.h"
 
 // ------------------------------------------------------
 // INTERNAL CALLBACKS
@@ -10,12 +11,12 @@ public:
     void onConnect(BLEServer* server) override {
         String addr = "unknown";
         manager->onConnected(addr);
-        Serial.println("[BLE] Device connected");
+        console_println("[BLE] Device connected");
     }
 
     void onDisconnect(BLEServer* server) override {
         manager->onDisconnected();
-        Serial.println("[BLE] Device disconnected");
+        console_println("[BLE] Device disconnected");
         BLEDevice::getAdvertising()->start();
     }
 
@@ -47,7 +48,7 @@ BLEManager::BLEManager()
 void BLEManager::init() {
     if (initialized) return;
 
-    Serial.println("[BLE] Initializing...");
+    console_println("[BLE] Initializing...");
 
     BLEDevice::init(BLE_DEVICE_NAME);
 
@@ -78,7 +79,7 @@ void BLEManager::init() {
     advertising = true;
 
     initialized = true;
-    Serial.println("[BLE] Manager initialized");
+    console_println("[BLE] Manager initialized");
 }
 
 void BLEManager::deinit() {
@@ -91,7 +92,7 @@ void BLEManager::deinit() {
     pServer = nullptr;
     pCharacteristic = nullptr;
 
-    Serial.println("[BLE] Deinitialized");
+    console_println("[BLE] Deinitialized");
 }
 
 // ------------------------------------------------------
@@ -122,7 +123,7 @@ void BLEManager::startAdvertising() {
     BLEDevice::getAdvertising()->start();
     advertising = true;
 
-    Serial.println("[BLE] Advertising started");
+    console_println("[BLE] Advertising started");
 }
 
 void BLEManager::stopAdvertising() {
@@ -131,7 +132,27 @@ void BLEManager::stopAdvertising() {
     BLEDevice::getAdvertising()->stop();
     advertising = false;
 
-    Serial.println("[BLE] Advertising stopped");
+    console_println("[BLE] Advertising stopped");
+}
+
+void BLEManager::scan() {
+    if (!initialized) init();
+
+    console_println("[BLE] Scanning...");
+    BLEScan* pBLEScan = BLEDevice::getScan();
+    pBLEScan->setActiveScan(true);
+    pBLEScan->setInterval(100);
+    pBLEScan->setWindow(99);
+
+    BLEScanResults foundDevices = pBLEScan->start(5, false);
+    console_printf("[BLE] Found %d devices", foundDevices.getCount());
+
+    for (int i = 0; i < foundDevices.getCount(); i++) {
+        BLEAdvertisedDevice device = foundDevices.getDevice(i);
+        console_printf("%d: %s", i, device.getName().c_str());
+        console_printf("  Addr: %s | RSSI: %d", device.getAddress().toString().c_str(), device.getRSSI());
+    }
+    pBLEScan->clearResults();
 }
 
 // ------------------------------------------------------
@@ -143,7 +164,7 @@ void BLEManager::sendData(const String& data) {
     pCharacteristic->setValue(data.c_str());
     pCharacteristic->notify();
 
-    Serial.printf("[BLE] Sent: %s\n", data.c_str());
+    console_printf("[BLE] Sent: %s", data.c_str());
 }
 
 String BLEManager::receiveData() {

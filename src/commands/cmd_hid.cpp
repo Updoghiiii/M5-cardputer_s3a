@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include <M5Cardputer.h>
+#include "../console.h"
 
 void cmd_hid_test() {
-    Serial.println("=== HID Test Mode ===");
-    Serial.println("Press keys on the Cardputer keyboard.");
-    Serial.println("Press ESC to exit.\n");
+    console_println("=== HID Test Mode ===");
+    console_println("Press keys on the Cardputer keyboard.");
+    console_println("Press ESC to exit.\n");
 
     auto &d = M5Cardputer.Display;
     d.fillScreen(BLACK);
@@ -22,7 +23,7 @@ void cmd_hid_test() {
         auto &state = M5Cardputer.Keyboard.keysState();
 
         if (state.word.size() == 1 && state.word[0] == 27) {
-            Serial.println("Exiting HID test mode.");
+            console_println("Exiting HID test mode.");
             break;
         }
 
@@ -66,28 +67,28 @@ void cmd_hid_test() {
 }
 
 void cmd_hid_keyboard_info() {
-    Serial.println("=== Keyboard Information ===");
-    Serial.println("Keyboard Model: M5Cardputer");
-    Serial.println("Layout: QWERTY");
-    Serial.println("Keys: 47");
-    Serial.println("Features:");
-    Serial.println("  - Shift");
-    Serial.println("  - Ctrl");
-    Serial.println("  - Alt (Opt)");
-    Serial.println("  - Function (Fn)");
-    Serial.println("  - Caps Lock");
-    Serial.println("  - HID Keycode Output");
-    Serial.println("Status: Active\n");
+    console_println("=== Keyboard Information ===");
+    console_println("Keyboard Model: M5Cardputer");
+    console_println("Layout: QWERTY");
+    console_println("Keys: 47");
+    console_println("Features:");
+    console_println("  - Shift");
+    console_println("  - Ctrl");
+    console_println("  - Alt (Opt)");
+    console_println("  - Function (Fn)");
+    console_println("  - Caps Lock");
+    console_println("  - HID Keycode Output");
+    console_println("Status: Active\n");
 }
 
 void cmd_hid_mouse_emulate() {
-    Serial.println("=== Mouse Emulation ===");
-    Serial.println("Feature not implemented yet.");
-    Serial.println("Planned: Arrow keys = move, Fn+Enter = click.\n");
+    console_println("=== Mouse Emulation ===");
+    console_println("Feature not implemented yet.");
+    console_println("Planned: Arrow keys = move, Fn+Enter = click.\n");
 }
 
 void cmd_hid_gamepad_test() {
-    Serial.println("=== Gamepad Test ===");
-    Serial.println("Feature not implemented yet.");
-    Serial.println("Planned: WASD + Enter + Space mapping.\n");
+    console_println("=== Gamepad Test ===");
+    console_println("Feature not implemented yet.");
+    console_println("Planned: WASD + Enter + Space mapping.\n");
 }

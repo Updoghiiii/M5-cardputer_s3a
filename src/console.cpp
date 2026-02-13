@@ -63,6 +63,7 @@ void console_process_line(const String& line) {
 
         console_println("\nWiFi:");
         console_println("  wifi scan              - Scan for networks");
+        console_println("  wifi log               - Scan and log to SD");
 
         console_println("\nHID (Human Interface):");
         console_println("  hid test               - Test keyboard/buttons");
@@ -84,6 +85,7 @@ void console_process_line(const String& line) {
         console_println("  storage ls             - List SD card contents");
 
         console_println("\nBluetooth:");
+        console_println("  ble scan               - Scan for BLE devices");
         console_println("  ble start              - Start BLE advertising");
         console_println("  ble stop               - Stop BLE advertising");
         console_println("  ble info               - BLE information");
@@ -96,7 +98,7 @@ void console_process_line(const String& line) {
         console_println("\nAdvanced Tools:");
         console_println("  scan bssid             - Detailed WiFi scan");
         console_println("  parse <file>           - Parse log file");
-        console_println("  crack <target>         - Simulation/Test tool");
+        console_println("  crack <target> [dict]  - Simulation/Test tool");
 
         console_println("===========================\n");
         return;
@@ -133,6 +135,11 @@ void console_process_line(const String& line) {
     // -------------------------
     if (line == "wifi scan") {
         cmd_wifi_scan();
+        return;
+    }
+
+    if (line == "wifi log") {
+        cmd_wifi_log();
         return;
     }
 
@@ -213,6 +220,11 @@ void console_process_line(const String& line) {
 
     if (line == "ble stop") {
         cmd_ble_stop();
+        return;
+    }
+
+    if (line == "ble scan") {
+        cmd_ble_scan();
         return;
     }
 

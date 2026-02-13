@@ -28,7 +28,7 @@ void StorageManager::init() {
     }
 
     sdMounted = true;
-    Serial.println("SD Card mounted successfully");
+    console_println("SD Card mounted successfully");
     printStorageInfo();
 }
 
@@ -79,6 +79,21 @@ bool StorageManager::writeFile(const char* path, const String& data) {
     SD.rename(tempPath.c_str(), path);
 
     return true;
+}
+
+bool StorageManager::appendFile(const char* path, const String& data) {
+    if (!sdMounted) return false;
+
+    File file = SD.open(path, FILE_APPEND);
+    if (!file) {
+        console_printf("Failed to open file for append: %s", path);
+        return false;
+    }
+
+    size_t written = file.print(data);
+    file.close();
+
+    return (written > 0);
 }
 
 String StorageManager::readFile(const char* path) {

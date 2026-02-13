@@ -20,7 +20,7 @@ PowerManager::PowerManager()
 }
 
 void PowerManager::init() {
-    Serial.println("Power Manager initialized");
+    console_println("Power Manager initialized");
 }
 
 void PowerManager::update() {
@@ -41,7 +41,7 @@ void PowerManager::setPowerMode(PowerMode_t mode) {
     if (currentMode == mode) return;
 
     currentMode = mode;
-    Serial.printf("Power mode changed to: %s\n", getPowerModeString());
+    console_printf("Power mode changed to: %s", getPowerModeString());
 
     switch (mode) {
         case POWER_MODE_NORMAL:
@@ -57,7 +57,7 @@ void PowerManager::setPowerMode(PowerMode_t mode) {
             break;
 
         case POWER_MODE_SLEEP:
-            Serial.println("Entering sleep mode...");
+            console_println("Entering sleep mode...");
             enterSleep();
             break;
     }
@@ -126,14 +126,14 @@ void PowerManager::checkSleepCondition() {
 }
 
 void PowerManager::enterSleep() {
-    Serial.println("System sleeping...");
+    console_println("System sleeping...");
 
     M5Cardputer.Display.fillScreen(BLACK);
 
     esp_sleep_enable_timer_wakeup(5 * 1000000ULL);
     esp_light_sleep_start();
 
-    Serial.println("Woke from sleep");
+    console_println("Woke from sleep");
     resetIdleTimer();
     setPowerMode(POWER_MODE_NORMAL);
 }

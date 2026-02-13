@@ -1,5 +1,6 @@
 #include "config_manager.h"
 #include "storage_manager.h"
+#include "console.h"
 
 ConfigManager& ConfigManager::getInstance() {
     static ConfigManager instance;
@@ -12,7 +13,7 @@ ConfigManager::ConfigManager() {
 
 void ConfigManager::init() {
     loadConfig();
-    Serial.println("Config Manager initialized");
+    console_println("Config Manager initialized");
 }
 
 void ConfigManager::loadDefaults() {
@@ -29,20 +30,20 @@ void ConfigManager::loadConfig() {
     StorageManager& storage = StorageManager::getInstance();
 
     if (!storage.isSDCardMounted()) {
-        Serial.println("SD Card not mounted, using default config");
+        console_println("SD Card not mounted, using default config");
         loadDefaults();
         return;
     }
 
     if (!storage.fileExists(CONFIG_FILE)) {
-        Serial.println("Config file not found, creating with defaults");
+        console_println("Config file not found, creating with defaults");
         saveConfig();
         return;
     }
 
     String jsonString = storage.readFile(CONFIG_FILE);
     if (jsonString.length() == 0) {
-        Serial.println("Config file empty, loading defaults");
+        console_println("Config file empty, loading defaults");
         loadDefaults();
         return;
     }
@@ -51,7 +52,7 @@ void ConfigManager::loadConfig() {
     DeserializationError error = deserializeJson(doc, jsonString);
 
     if (error) {
-        Serial.printf("Failed to parse config: %s\n", error.c_str());
+        console_printf("Failed to parse config: %s", error.c_str());
         loadDefaults();
         return;
     }
@@ -64,14 +65,14 @@ void ConfigManager::loadConfig() {
     config.sleepTimeout = doc["sleepTimeout"] | 60000;
     config.batteryMonitoringEnabled = doc["batteryMonitoringEnabled"] | true;
 
-    Serial.println("Config loaded successfully");
+    console_println("Config loaded successfully");
 }
 
 void ConfigManager::saveConfig() {
     StorageManager& storage = StorageManager::getInstance();
 
     if (!storage.isSDCardMounted()) {
-        Serial.println("SD Card not mounted, cannot save config");
+        console_println("SD Card not mounted, cannot save config");
         return;
     }
 
@@ -89,16 +90,16 @@ void ConfigManager::saveConfig() {
     serializeJson(doc, jsonString);
 
     if (storage.writeFile(CONFIG_FILE, jsonString)) {
-        Serial.println("Config saved successfully");
+        console_println("Config saved successfully");
     } else {
-        Serial.println("Failed to save config");
+        console_println("Failed to save config");
     }
 }
 
 void ConfigManager::resetToDefaults() {
     loadDefaults();
     saveConfig();
-    Serial.println("Config reset to defaults");
+    console_println("Config reset to defaults");
 }
 
 String ConfigManager::getDeviceName() {
@@ -158,12 +159,12 @@ void ConfigManager::setBatteryMonitoringEnabled(bool enabled) {
 }
 
 void ConfigManager::printConfig() {
-    Serial.println("=== Current Configuration ===");
-    Serial.printf("Device Name: %s\n", config.deviceName.c_str());
-    Serial.printf("WiFi SSID: %s\n", config.wifiSSID.c_str());
-    Serial.printf("Bluetooth: %s\n", config.bluetoothEnabled ? "Enabled" : "Disabled");
-    Serial.printf("Display Brightness: %d\n", config.displayBrightness);
-    Serial.printf("Sleep Timeout: %d ms\n", config.sleepTimeout);
-    Serial.printf("Battery Monitoring: %s\n", config.batteryMonitoringEnabled ? "Enabled" : "Disabled");
-    Serial.println("============================");
+    console_println("=== Current Configuration ===");
+    console_printf("Device Name: %s", config.deviceName.c_str());
+    console_printf("WiFi SSID: %s", config.wifiSSID.c_str());
+    console_printf("Bluetooth: %s", config.bluetoothEnabled ? "Enabled" : "Disabled");
+    console_printf("Display Brightness: %d", config.displayBrightness);
+    console_printf("Sleep Timeout: %d ms", config.sleepTimeout);
+    console_printf("Battery Monitoring: %s", config.batteryMonitoringEnabled ? "Enabled" : "Disabled");
+    console_println("============================");
 }

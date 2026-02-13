@@ -14,6 +14,7 @@ public:
     bool createFile(const char* path);
     bool deleteFile(const char* path);
     bool writeFile(const char* path, const String& data);
+    bool appendFile(const char* path, const String& data);
     String readFile(const char* path);
 
     bool createDir(const char* path);

@@ -27,6 +27,7 @@ public:
 
     void startAdvertising();
     void stopAdvertising();
+    void scan();
 
     void sendData(const String& data);
     String receiveData();

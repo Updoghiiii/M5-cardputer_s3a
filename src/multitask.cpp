@@ -1,4 +1,5 @@
 #include "multitask.h"
+#include "console.h"
 #include <Arduino.h>
 
 QueueHandle_t eventQueue = nullptr;
@@ -19,16 +20,16 @@ void MultitaskManager::init() {
     if (eventQueue == nullptr) {
         eventQueue = xQueueCreate(32, sizeof(uint32_t));
         if (eventQueue == nullptr) {
-            Serial.println("Failed to create event queue");
+            console_println("Failed to create event queue");
         }
     }
-    Serial.println("Multitask Manager initialized");
+    console_println("Multitask Manager initialized");
 }
 
 TaskHandle_t MultitaskManager::createTask(const char* name, TaskFunction_t function,
                                           void* params, UBaseType_t priority, TaskType_t type) {
     if (taskCount >= MAX_TASKS) {
-        Serial.println("Max tasks reached");
+        console_println("Max tasks reached");
         return nullptr;
     }
     
@@ -42,10 +43,10 @@ TaskHandle_t MultitaskManager::createTask(const char* name, TaskFunction_t funct
         tasks[taskCount].priority = priority;
         tasks[taskCount].enabled = true;
         taskCount++;
-        Serial.printf("Task created: %s (Priority: %d)\n", name, priority);
+        console_printf("Task created: %s (Priority: %d)", name, (int)priority);
         return handle;
     } else {
-        Serial.printf("Failed to create task: %s\n", name);
+        console_printf("Failed to create task: %s", name);
         return nullptr;
     }
 }
@@ -75,11 +76,11 @@ void MultitaskManager::resumeTask(TaskHandle_t handle) {
 }
 
 void MultitaskManager::listTasks() {
-    Serial.println("Active Tasks:");
+    console_println("Active Tasks:");
     for (int i = 0; i < taskCount; i++) {
         if (tasks[i].enabled) {
-            Serial.printf("  - %s (Priority: %d, Type: %d)\n", 
-                         tasks[i].name, tasks[i].priority, tasks[i].type);
+            console_printf("  - %s (Priority: %d, Type: %d)",
+                         tasks[i].name, (int)tasks[i].priority, tasks[i].type);
         }
     }
 }
