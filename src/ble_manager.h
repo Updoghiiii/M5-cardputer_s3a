@@ -3,6 +3,7 @@
 #include <NimBLEServer.h>
 #include <NimBLECharacteristic.h>
 #include <NimBLEDescriptor.h>
+#include <NimBLE2902.h>
 
 #define BLE_DEVICE_NAME "Cardputer"
 

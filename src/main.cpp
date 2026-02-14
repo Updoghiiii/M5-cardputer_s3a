@@ -4,6 +4,7 @@
 #include "display_manager.h"
 #include "power_manager.h"
 #include <vector>
+#include <esp_system.h>
 
 String buffer = "";
 int cursor_pos = 0;
